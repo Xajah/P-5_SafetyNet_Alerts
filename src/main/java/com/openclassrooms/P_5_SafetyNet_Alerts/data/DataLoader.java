@@ -1,27 +1,26 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.data;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.openclassrooms.P_5_SafetyNet_Alerts.model.DataWrapper;
-import com.openclassrooms.P_5_SafetyNet_Alerts.service.PersonService;
-import com.openclassrooms.P_5_SafetyNet_Alerts.service.FirestationService;
-import com.openclassrooms.P_5_SafetyNet_Alerts.service.MedicalRecordService;
+import com.openclassrooms.P_5_SafetyNet_Alerts.model.Firestation;
+import com.openclassrooms.P_5_SafetyNet_Alerts.model.MedicalRecord;
+import com.openclassrooms.P_5_SafetyNet_Alerts.model.Person;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.Data;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.springframework.boot.CommandLineRunner;
 
 import java.io.InputStream;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Data
 public class DataLoader implements CommandLineRunner {
 
-    private final PersonService personService;
-    private final FirestationService firestationService;
-    private final MedicalRecordService medicalRecordService;
-
-
+    private List<Person> persons;
+    private List<Firestation> firestations;
+    private List<MedicalRecord> medicalRecords;
 
     @Override
     public void run(String... args) throws Exception {
@@ -29,12 +28,14 @@ public class DataLoader implements CommandLineRunner {
         InputStream is = new ClassPathResource("data.json").getInputStream();
 
         DataWrapper data = mapper.readValue(is, DataWrapper.class);
-
-        // Injection des données dans chaque service
-        personService.setPersons(data.getPersons());
-        firestationService.setFirestations(data.getFirestations());
-        medicalRecordService.setMedicalRecords(data.getMedicalRecords());
+        this.persons = data.getPersons();
+        this.firestations = data.getFirestations();
+        this.medicalRecords = data.getMedicalRecords();
 
         System.out.println("Données chargées depuis data.json !");
     }
+
+    public List<Person> getPersons() { return persons; }
+    public List<Firestation> getFirestations() { return firestations; }
+    public List<MedicalRecord> getMedicalRecords() { return medicalRecords; }
 }
