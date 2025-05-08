@@ -21,11 +21,9 @@ public class PersonService {
     private final FirestationService firestationService;
 
     // -------------------- /firestation?stationNumber=xx --------------------- //
-    public PersonsByFirestationIDReturn getAllPersonsByDependingOfFirestationID(int stationId) {
-        // Récupération des adresses couvertes par la caserne
+    public Optional<PersonsByFirestationIDReturn> getAllPersonsByDependingOfFirestationID(int stationId) {
         List<String> addresses = firestationService.getAddressesByStationID(stationId);
 
-        // Filtrer toutes les personnes habitant à ces adresses
         List<Person> coveredPersons = dataLoader.getPersons().stream()
                 .filter(p -> addresses.contains(p.getAddress()))
                 .collect(Collectors.toList());
@@ -39,22 +37,20 @@ public class PersonService {
                         .build())
                 .collect(Collectors.toList());
 
-        // Partitionner les âges en adulte et enfant
         Map<Boolean, Long> ageCount = coveredPersons.stream()
-                .map(p -> {
-                    MedicalRecord mr = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
-                    if (mr != null) {
-                        return DateUtils.calculateAgeFromBirthdate(mr.getBirthdate());
-                    }
-                    return -1;
-                })
+                .map(p -> medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName())
+                        .map(MedicalRecord::getBirthdate)
+                        .map(DateUtils::calculateAgeFromBirthdate)
+                        .orElse(0))
                 .collect(Collectors.partitioningBy(age -> age >= 18, Collectors.counting()));
 
-        return PersonsByFirestationIDReturn.builder()
+        Optional<PersonsByFirestationIDReturn> result = Optional.of(PersonsByFirestationIDReturn.builder()
                 .persons(dtos)
                 .countOfAdults(ageCount.getOrDefault(true, 0L).intValue())
                 .countOfChilds(ageCount.getOrDefault(false, 0L).intValue())
-                .build();
+                .build());
+
+        return result;
     }
 
     // -------------------- /childAlert?address=xxx --------------------- //
@@ -63,7 +59,6 @@ public class PersonService {
                 .filter(p -> address.equalsIgnoreCase(p.getAddress()))
                 .collect(Collectors.toList());
 
-        // Pré-calcul des autres membres du foyer
         List<HouseholdMemberDTO> members = residents.stream()
                 .map(p -> HouseholdMemberDTO.builder()
                         .firstName(p.getFirstName())
@@ -72,17 +67,17 @@ public class PersonService {
                 .collect(Collectors.toList());
 
         return residents.stream()
-                .filter(p -> {
-                    MedicalRecord mr = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
-                    return mr != null && DateUtils.calculateAgeFromBirthdate(mr.getBirthdate()) < 18;
-                })
+                .filter(p -> medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName())
+                        .map(MedicalRecord::getBirthdate)
+                        .map(DateUtils::calculateAgeFromBirthdate)
+                        .orElse(0) < 18)
                 .map(p -> {
-                    MedicalRecord mr = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
-                    int age = DateUtils.calculateAgeFromBirthdate(mr.getBirthdate());
-                    // Liste des membres hors cet enfant
+                    Optional<MedicalRecord> mr = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
+                    int age = mr.map(MedicalRecord::getBirthdate)
+                            .map(DateUtils::calculateAgeFromBirthdate)
+                            .orElse(0);
                     List<HouseholdMemberDTO> otherMembers = members.stream()
-                            .filter(m -> !(m.getFirstName().equals(p.getFirstName())
-                                    && m.getLastName().equals(p.getLastName())))
+                            .filter(m -> !(m.getFirstName().equals(p.getFirstName()) && m.getLastName().equals(p.getLastName())))
                             .collect(Collectors.toList());
                     return ChildAlertDTO.builder()
                             .firstName(p.getFirstName())
@@ -94,8 +89,34 @@ public class PersonService {
                 .collect(Collectors.toList());
     }
 
+    // -------------------- /fire?address=xxx --------------------- //
+    public Optional<FireAddressReturnDTO> getHouseholdInfoByAddress(String address) {
+        List<Person> persons = dataLoader.getPersons().stream()
+                .filter(p -> address.equalsIgnoreCase(p.getAddress()))
+                .collect(Collectors.toList());
+        Optional<Integer> firestationNumber = firestationService.getFirestationNumberByAddress(address);
+
+        List<FireAddressResidentDTO> residents = persons.stream()
+                .map(p -> {
+                    Optional<MedicalRecord> record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
+                    return FireAddressResidentDTO.builder()
+                            .lastName(p.getLastName())
+                            .firstName(p.getFirstName())
+                            .phone(p.getPhone())
+                            .age(record.map(MedicalRecord::getBirthdate).map(DateUtils::calculateAgeFromBirthdate).orElse(0))
+                            .medications(record.map(MedicalRecord::getMedications).orElse(Collections.emptyList()))
+                            .allergies(record.map(MedicalRecord::getAllergies).orElse(Collections.emptyList()))
+                            .build();
+                })
+                .collect(Collectors.toList());
+          Optional<FireAddressReturnDTO> result = Optional.of(FireAddressReturnDTO.builder()
+                  .stationNumber(firestationNumber.orElse(0))
+                  .residents(residents)
+                  .build());
+        return result;
+    }
     // -------------------- /phoneAlert?firestation=xx --------------------- //
-    public PhoneAlertByFirestationDTO getPhoneAlertByFirestation(int stationNumber) {
+    public Optional<PhoneAlertByFirestationDTO> getPhoneAlertByFirestation(int stationNumber) {
         List<String> addresses = firestationService.getAddressesByStationID(stationNumber);
 
         Set<String> phones = dataLoader.getPersons().stream()
@@ -103,39 +124,11 @@ public class PersonService {
                 .map(Person::getPhone)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
-
-        return PhoneAlertByFirestationDTO.builder()
+        Optional<PhoneAlertByFirestationDTO> result = Optional.of(PhoneAlertByFirestationDTO.builder()
                 .phoneNumbers(new ArrayList<>(phones))
-                .build();
-    }
+                .build());
 
-    // -------------------- /fire?address=xxx --------------------- //
-    public FireAddressReturnDTO getHouseholdInfoByAddress(String address) {
-        Firestation firestation = firestationService.getFirestationByAdress(address);
-        if (firestation == null) {
-            return null;
-        }
-        int firestationNumber = firestation.getStation();
-
-        List<FireAddressResidentDTO> residents = dataLoader.getPersons().stream()
-                .filter(p -> address.equalsIgnoreCase(p.getAddress()))
-                .map(p -> {
-                    MedicalRecord record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
-                    return FireAddressResidentDTO.builder()
-                            .lastName(p.getLastName())
-                            .firstName(p.getFirstName())
-                            .phone(p.getPhone())
-                            .age(record != null ? DateUtils.calculateAgeFromBirthdate(record.getBirthdate()) : 0)
-                            .medications(record != null ? record.getMedications() : Collections.emptyList())
-                            .allergies(record != null ? record.getAllergies() : Collections.emptyList())
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        return FireAddressReturnDTO.builder()
-                .stationNumber(firestationNumber)
-                .residents(residents)
-                .build();
+        return result;
     }
 
     // -------------------- /flood/stations?stations=xx,yy,zz --------------------- //
@@ -147,14 +140,14 @@ public class PersonService {
                         address -> dataLoader.getPersons().stream()
                                 .filter(p -> p.getAddress().equals(address))
                                 .map(p -> {
-                                    MedicalRecord record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
+                                    Optional<MedicalRecord> record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
                                     return FireAddressResidentDTO.builder()
                                             .lastName(p.getLastName())
                                             .firstName(p.getFirstName())
                                             .phone(p.getPhone())
-                                            .age(record != null ? DateUtils.calculateAgeFromBirthdate(record.getBirthdate()) : 0)
-                                            .medications(record != null ? record.getMedications() : Collections.emptyList())
-                                            .allergies(record != null ? record.getAllergies() : Collections.emptyList())
+                                            .age(record.map(MedicalRecord::getBirthdate).map(DateUtils::calculateAgeFromBirthdate).orElse(0))
+                                            .medications(record.map(MedicalRecord::getMedications).orElse(Collections.emptyList()))
+                                            .allergies(record.map(MedicalRecord::getAllergies).orElse(Collections.emptyList()))
                                             .build();
                                 })
                                 .collect(Collectors.toList())
@@ -166,15 +159,15 @@ public class PersonService {
         return dataLoader.getPersons().stream()
                 .filter(p -> p.getLastName().equalsIgnoreCase(lastName))
                 .map(p -> {
-                    MedicalRecord record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
+                    Optional<MedicalRecord> record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
                     return PersonInfoByNameDTO.builder()
                             .firstName(p.getFirstName())
                             .lastName(p.getLastName())
                             .address(p.getAddress())
                             .email(p.getEmail())
-                            .age(record != null ? DateUtils.calculateAgeFromBirthdate(record.getBirthdate()) : 0)
-                            .medications(record != null ? record.getMedications() : Collections.emptyList())
-                            .allergies(record != null ? record.getAllergies() : Collections.emptyList())
+                            .age(record.map(MedicalRecord::getBirthdate).map(DateUtils::calculateAgeFromBirthdate).orElse(0))
+                            .medications(record.map(MedicalRecord::getMedications).orElse(Collections.emptyList()))
+                            .allergies(record.map(MedicalRecord::getAllergies).orElse(Collections.emptyList()))
                             .build();
                 })
                 .collect(Collectors.toList());

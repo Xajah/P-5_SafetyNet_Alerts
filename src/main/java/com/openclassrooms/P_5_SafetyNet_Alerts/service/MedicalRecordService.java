@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -17,11 +18,10 @@ public class MedicalRecordService {
         return dataLoader.getMedicalRecords();
     }
 
-    public MedicalRecord getMedicalRecordByName(String firstName, String lastName) {
-        // La recherche "fonctionnelle", renvoie le premier trouvé ou null
+    public Optional<MedicalRecord> getMedicalRecordByName(String firstName, String lastName) {
         return getMedicalRecords().stream()
                 .filter(mr -> mr.getFirstName().equals(firstName) && mr.getLastName().equals(lastName))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
+        // return Optional<MedicalRecord> : soit présent soit Optional.empty()
     }
 }
