@@ -15,6 +15,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +40,7 @@ public class MedicalRecordServiceTest {
     public void setUp(){
 
 
-        medicalRecordsMock = Arrays.asList(
+        medicalRecordsMock = new ArrayList<>(Arrays.asList(
                 MedicalRecord.builder()
                         .firstName("John")
                         .lastName("Boyd")
@@ -68,7 +69,7 @@ public class MedicalRecordServiceTest {
                         .medications(Arrays.asList("dodoxadin:30mg"))
                         .allergies(Arrays.asList("shellfish"))
                         .build()
-        );
+        ));
         serviceUnderTest = new MedicalRecordService(dataLoader);
     }
               @Test
@@ -143,5 +144,133 @@ public class MedicalRecordServiceTest {
         //Assert
         assertNull(result);
     }
+    //--- ADD
+
+    @Test
+    void testAddMedicalRecord_Added() {
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+
+        MedicalRecord record = MedicalRecord.builder()
+                .firstName("Rick").lastName("Sanchez")
+                .birthdate(LocalDate.parse("12/05/1967", formatter))
+                .medications(Arrays.asList("alcohol:lots"))
+                .allergies(Arrays.asList("none")).build();
+
+        Optional<MedicalRecord> result = serviceUnderTest.addMedicalRecord(record);
+
+        assertNotNull(result);
+        assertEquals("Rick", result.get().getFirstName());
+        assertEquals("Sanchez", result.get().getLastName());
     }
+
+    @Test
+    void testAddMedicalRecord_NotAdded_AlreadyExists() {
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+        // Already present
+        MedicalRecord record = MedicalRecord.builder()
+                .firstName("John").lastName("Boyd")
+                .birthdate(LocalDate.parse("01/01/2000", formatter))
+                .medications(Arrays.asList()).allergies(Arrays.asList()).build();
+
+        Optional<MedicalRecord> result = serviceUnderTest.addMedicalRecord(record);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testAddMedicalRecord_NoData() {
+        when(dataLoader.getMedicalRecords()).thenReturn(new ArrayList<>());
+        MedicalRecord record = MedicalRecord.builder()
+                .firstName("Summer").lastName("Smith")
+                .birthdate(LocalDate.parse("02/14/2003", formatter))
+                .build();
+
+        Optional<MedicalRecord> result = serviceUnderTest.addMedicalRecord(record);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testAddMedicalRecord_NullFirstnameOrLastname() {
+
+        MedicalRecord record = MedicalRecord.builder().firstName(null).lastName("Who").build();
+        Optional<MedicalRecord> result = serviceUnderTest.addMedicalRecord(record);
+
+        assertTrue(result.isEmpty());
+
+        record = MedicalRecord.builder().firstName("Who").lastName(null).build();
+        result = serviceUnderTest.addMedicalRecord(record);
+
+        assertTrue(result.isEmpty());
+    }
+
+//--- UPDATE
+
+    @Test
+    void testUpdateMedicalRecord_Success() {
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+
+        MedicalRecord update = MedicalRecord.builder()
+                .firstName("Tenley").lastName("Boyd")
+                .birthdate(LocalDate.parse("12/31/2020", formatter))
+                .medications(Arrays.asList("ibuprofen:200mg"))
+                .allergies(Arrays.asList("dust"))
+                .build();
+
+        Optional<MedicalRecord> result = serviceUnderTest.updateMedicalRecord(update);
+
+        assertTrue(result.isPresent());
+        assertEquals(LocalDate.parse("12/31/2020", formatter), result.get().getBirthdate());
+        assertEquals(Arrays.asList("ibuprofen:200mg"), result.get().getMedications());
+        assertEquals(Arrays.asList("dust"), result.get().getAllergies());
+    }
+
+    @Test
+    void testUpdateMedicalRecord_EmptyList() {
+        when(dataLoader.getMedicalRecords()).thenReturn(new ArrayList<>());
+        MedicalRecord update = MedicalRecord.builder().firstName("Nobody").lastName("Unknown").build();
+
+        Optional<MedicalRecord> result = serviceUnderTest.updateMedicalRecord(update);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testUpdateMedicalRecord_NotFound() {
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+
+        MedicalRecord update = MedicalRecord.builder().firstName("Alien").lastName("Invader").build();
+
+        Optional<MedicalRecord> result = serviceUnderTest.updateMedicalRecord(update);
+
+        assertTrue(result.isEmpty());
+    }
+
+//--- DELETE
+
+    @Test
+    void testDeleteMedicalRecord_Success() {
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+        int sizeBefore = medicalRecordsMock.size();
+
+        boolean result = serviceUnderTest.deleteMedicalRecord("Jacob", "Boyd");
+
+        assertTrue(result);
+        assertEquals(sizeBefore - 1, medicalRecordsMock.size());
+        assertTrue(medicalRecordsMock.stream().noneMatch(r -> r.getFirstName().equals("Jacob") && r.getLastName().equals("Boyd")));
+    }
+
+    @Test
+    void testDeleteMedicalRecord_NotFound() {
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+        int sizeBefore = medicalRecordsMock.size();
+
+        boolean result = serviceUnderTest.deleteMedicalRecord("Not", "Exist");
+
+        assertFalse(result);
+        assertEquals(sizeBefore, medicalRecordsMock.size());
+
+    }
+
+}
 

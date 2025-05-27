@@ -37,12 +37,12 @@ class PersonServiceTest {
 
     @BeforeEach
     void setUp() {
-        personsMock = Arrays.asList(
+        personsMock = new ArrayList<>(Arrays.asList(
                 Person.builder().firstName("John").lastName("Boyd").address("1509 Culver St").city("Culver").phone("111-1111").email("john@domain.com").build(),
                 Person.builder().firstName("Jacob").lastName("Boyd").address("1509 Culver St").city("Culver").phone("222-2222").email("jacob@domain.com").build(),
                 Person.builder().firstName("Tenley").lastName("Boyd").address("1509 Culver St").city("Culver").phone("333-3333").email("tenley@domain.com").build(),
                 Person.builder().firstName("Peter").lastName("Duncan").address("29 15th St").city("Springfield").phone("444-4444").email("peter@domain.com").build()
-        );
+        ));
         medicalRecordsMock = Arrays.asList(
                 MedicalRecord.builder().firstName("John").lastName("Boyd").birthdate(LocalDate.parse("03/06/1984", formatter)).medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg")).allergies(Arrays.asList("nillacilan")).build(),
                 MedicalRecord.builder().firstName("Jacob").lastName("Boyd").birthdate(LocalDate.parse("03/06/1989", formatter)).medications(Arrays.asList("pharmacol:5000mg", "terazine:10mg", "noznazol:250mg")).allergies(Arrays.asList()).build(),
@@ -79,9 +79,8 @@ class PersonServiceTest {
 
         Optional<PersonsByFirestationIDReturn> result = serviceUnderTest.getAllPersonsByDependingOfFirestationID(99);
         assertNotNull(result);
-        assertTrue(result.get().getPersons().isEmpty());
-        assertEquals(0, result.get().getCountOfAdults());
-        assertEquals(0, result.get().getCountOfChilds());
+        assertTrue(result.isEmpty());
+
     }
 
     @Test
@@ -131,10 +130,8 @@ class PersonServiceTest {
 
         Optional<FireAddressReturnDTO> result = serviceUnderTest.getHouseholdInfoByAddress("unknown_address");
         assertNotNull(result);
-        assertTrue(result.isPresent());
-        FireAddressReturnDTO dto = result.get();
-        assertEquals(0, dto.getStationNumber());
-        assertTrue(dto.getResidents().isEmpty()); // personne n'habite là !
+        assertTrue(result.isEmpty());
+
     }
 
 
@@ -271,8 +268,8 @@ class PersonServiceTest {
 
         Optional<PhoneAlertByFirestationDTO> result = serviceUnderTest.getPhoneAlertByFirestation(42);
         assertNotNull(result);
-        assertTrue(result.isPresent());
-        assertTrue(result.get().getPhoneNumbers().isEmpty());
+        assertTrue(result.isEmpty());
+
     }
 
     @Test
@@ -284,8 +281,8 @@ class PersonServiceTest {
 
         Optional<PhoneAlertByFirestationDTO> result = serviceUnderTest.getPhoneAlertByFirestation(1);
         assertNotNull(result);
-        assertTrue(result.isPresent());
-        assertTrue(result.get().getPhoneNumbers().isEmpty());
+        assertTrue(result.isEmpty());
+
     }
     @Test
     void testGetFloodInfoByStations_noAddresses() {
@@ -327,6 +324,134 @@ class PersonServiceTest {
         List<String> emails = serviceUnderTest.getEmailsByCity("Metropolis");
         assertEquals(1, emails.size());
     }
+
+    //--- ADD
+
+    @Test
+    void testAddPerson_Added() {
+        when(dataLoader.getPersons()).thenReturn(personsMock);
+
+        Person person = Person.builder()
+                .firstName("Walter").lastName("White").address("308 Negra Arroyo").city("Albuquerque").phone("777-7777").email("heisenberg@meth.com").build();
+
+        Optional<Person> result = serviceUnderTest.addPerson(person);
+        assertNotNull(result);
+        assertEquals("Walter", result.get().getFirstName());
+        assertEquals("White", result.get().getLastName());
+    }
+
+    @Test
+    void testAddPerson_NotAdded_AlreadyExists() {
+        when(dataLoader.getPersons()).thenReturn(personsMock);
+        Person person = Person.builder().firstName("John").lastName("Boyd").address("Another Address").build();
+
+        Optional<Person> result = serviceUnderTest.addPerson(person);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testAddPerson_NoData() {
+        when(dataLoader.getPersons()).thenReturn(new ArrayList<>());
+
+        Person person = Person.builder().firstName("Bruce").lastName("Wayne").address("Batcave").build();
+
+        Optional<Person> result = serviceUnderTest.addPerson(person);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testAddPerson_NullFirstnameOrLastname() {
+
+
+        Person person = Person.builder().firstName(null).lastName("Spectre").address("Nowhere").build();
+        Optional<Person> result = serviceUnderTest.addPerson(person);
+
+        assertTrue(result.isEmpty());
+
+        person = Person.builder().firstName("James").lastName(null).address("Nowhere").build();
+        result = serviceUnderTest.addPerson(person);
+
+        assertTrue(result.isEmpty());
+    }
+
+//--- UPDATE
+
+    @Test
+    void testUpdatePerson_Success() {
+        when(dataLoader.getPersons()).thenReturn(personsMock);
+
+        Person update = Person.builder()
+                .firstName("Tenley").lastName("Boyd")
+                .address("12 updated street")
+                .city("UpdatedCity")
+                .phone("999-9999")
+                .email("updated@mail.com")
+                .build();
+
+        Optional<Person> result = serviceUnderTest.updatePerson(update);
+
+        assertTrue(result.isPresent());
+        assertEquals("12 updated street", result.get().getAddress());
+        assertEquals("UpdatedCity", result.get().getCity());
+        assertEquals("999-9999", result.get().getPhone());
+        assertEquals("updated@mail.com", result.get().getEmail());
+    }
+
+    @Test
+    void testUpdatePerson_EmptyList() {
+        when(dataLoader.getPersons()).thenReturn(new ArrayList<>());
+
+        Person update = Person.builder()
+                .firstName("Ghost").lastName("Invisible")
+                .address("NoAddress")
+                .build();
+
+        Optional<Person> result = serviceUnderTest.updatePerson(update);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testUpdatePerson_NotFound() {
+        when(dataLoader.getPersons()).thenReturn(personsMock);
+
+        Person update = Person.builder()
+                .firstName("Not").lastName("Exist")
+                .address("42 Galaxy road")
+                .build();
+
+        Optional<Person> result = serviceUnderTest.updatePerson(update);
+
+        assertTrue(result.isEmpty());
+    }
+
+// Pas applicable pour Person car address n'est pas la clé
+
+//--- DELETE
+
+    @Test
+    void testDeletePerson_Success() {
+        when(dataLoader.getPersons()).thenReturn(personsMock);
+        int sizeBefore = personsMock.size();
+
+        boolean result = serviceUnderTest.deletePerson("John", "Boyd");
+
+        assertTrue(result);
+        assertEquals(sizeBefore - 1, personsMock.size());
+        assertTrue(personsMock.stream().noneMatch(p -> p.getFirstName().equals("John") && p.getLastName().equals("Boyd")));
+    }
+
+    @Test
+    void testDeletePerson_NotFound() {
+        when(dataLoader.getPersons()).thenReturn(personsMock);
+        int sizeBefore = personsMock.size();
+
+        boolean result = serviceUnderTest.deletePerson("Foo", "Bar");
+
+        assertFalse(result);
+        assertEquals(sizeBefore, personsMock.size());
+    }
+
 
 
 }
