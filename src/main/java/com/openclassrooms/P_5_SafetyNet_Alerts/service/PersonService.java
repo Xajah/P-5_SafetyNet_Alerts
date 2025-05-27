@@ -44,6 +44,8 @@ public class PersonService {
                         .orElse(0))
                 .collect(Collectors.partitioningBy(age -> age >= 18, Collectors.counting()));
 
+        if(dtos.isEmpty()){return Optional.empty();}
+
         Optional<PersonsByFirestationIDReturn> result = Optional.of(PersonsByFirestationIDReturn.builder()
                 .persons(dtos)
                 .countOfAdults(ageCount.getOrDefault(true, 0L).intValue())
@@ -96,6 +98,8 @@ public class PersonService {
                 .collect(Collectors.toList());
         Optional<Integer> firestationNumber = firestationService.getFirestationNumberByAddress(address);
 
+        if(persons.isEmpty() && firestationNumber.isEmpty()){return Optional.empty();}
+
         List<FireAddressResidentDTO> residents = persons.stream()
                 .map(p -> {
                     Optional<MedicalRecord> record = medicalRecordService.getMedicalRecordByName(p.getFirstName(), p.getLastName());
@@ -124,6 +128,8 @@ public class PersonService {
                 .map(Person::getPhone)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
+
+        if(phones.isEmpty()){return Optional.empty();}
         Optional<PhoneAlertByFirestationDTO> result = Optional.of(PhoneAlertByFirestationDTO.builder()
                 .phoneNumbers(new ArrayList<>(phones))
                 .build());
@@ -181,5 +187,51 @@ public class PersonService {
                 .filter(Objects::nonNull)
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+
+    //-------------------------------------------------/EndPoints/----------------------------------------------//
+    // POST : Ajouter une nouvelle personne
+    public Optional<Person> addPerson(Person person) {
+        if(person.getFirstName() == null || person.getLastName() == null){return Optional.empty();}
+        List<Person> persons = dataLoader.getPersons();
+        if (persons.isEmpty()){return Optional.empty();}
+
+        boolean exists = persons.stream()
+                .anyMatch(p -> p.getFirstName().equalsIgnoreCase(person.getFirstName())
+                        && p.getLastName().equalsIgnoreCase(person.getLastName()));
+        if (exists) {
+            return Optional.empty();
+        }
+        persons.add(person);
+        return Optional.of(person);
+    }
+
+    // PUT : Mettre à jour une personne existante (hors prénom et nom)
+    public Optional<Person> updatePerson(Person person) {
+        List<Person> persons = dataLoader.getPersons();
+        if(persons.isEmpty()){return Optional.empty();}
+        Optional<Person> existingOpt = persons.stream()
+                .filter(p -> p.getFirstName().equalsIgnoreCase(person.getFirstName())
+                        && p.getLastName().equalsIgnoreCase(person.getLastName()))
+                .findFirst();
+
+        existingOpt.ifPresent(p -> {
+            p.setAddress(person.getAddress());
+            p.setCity(person.getCity());
+            p.setEmail(person.getEmail());
+            p.setPhone(person.getPhone());
+        });
+        return existingOpt;
+    }
+
+    // DELETE : Supprimer une personne (clé nom/prénom)
+    public boolean deletePerson(String firstName, String lastName) {
+        if(firstName== null || lastName == null){return false;}
+        List<Person> persons = dataLoader.getPersons();
+        if (persons.isEmpty()){return false;}
+
+        return persons.removeIf(p -> p.getFirstName().equalsIgnoreCase(firstName)
+                && p.getLastName().equalsIgnoreCase(lastName));
     }
 }
