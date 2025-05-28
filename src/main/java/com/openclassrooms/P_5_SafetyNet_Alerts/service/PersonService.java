@@ -12,6 +12,15 @@ import org.springframework.stereotype.Service;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Service métier dédié à la gestion des personnes ({@link Person}).
+ * <p>
+ * Permet de répondre aux besoins de l'application en matière de recherche, création,
+ * modification et suppression d'habitants, et de fournir des informations ou agrégations
+ * utiles aux contrôleurs REST (par exemple: habitants desservis par une caserne, enfants par adresse,
+ * informations pour alertes, filtres par ville, etc.).
+ */
+
 @Service
 @RequiredArgsConstructor
 public class PersonService {
@@ -20,6 +29,17 @@ public class PersonService {
     private final MedicalRecordService medicalRecordService;
     private final FirestationService firestationService;
 
+    /**
+     * Récupère la liste des personnes couvertes par une caserne particulière.
+     * <p>
+     * Endpoint GET
+     * Retourne les habitants couverts, avec prénom, nom, adresse, téléphone,
+     * et un décompte des adultes et des enfants (-18 ans) dans la zone desservie.
+     *
+     * @param stationId Numéro de la caserne
+     * @return Objet contenant la liste des personnes et les comptes adultes/enfants,
+     *         ou Optional.empty() si aucune trouvée
+     */
     // -------------------- /firestation?stationNumber=xx --------------------- //
     public Optional<PersonsByFirestationIDReturn> getAllPersonsByDependingOfFirestationID(int stationId) {
         List<String> addresses = firestationService.getAddressesByStationID(stationId);
@@ -55,6 +75,17 @@ public class PersonService {
         return result;
     }
 
+    /**
+     * Récupère une liste de tous les enfants (- 18 ans) d'une adresse donnée,
+     * ainsi que la liste des autres membres du foyer.
+     * <p>
+     * Endpoint GET
+     * Retourne les enfants, leur âge, et les autres membres du foyer.
+     * Si aucun enfant, la liste retournée est vide.
+     *
+     * @param address Adresse recherchée
+     * @return Liste d'enfants à l'adresse (avec membres du foyer)
+     */
     // -------------------- /childAlert?address=xxx --------------------- //
     public List<ChildAlertDTO> getChildsByAdress(String address) {
         List<Person> residents = dataLoader.getPersons().stream()
@@ -91,6 +122,15 @@ public class PersonService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Donne la liste des habitants d'une adresse ainsi que le numéro de la caserne les desservant.
+     * <p>
+     * Endpoint  GET
+     * Retourne la liste des habitants (nom, téléphone, âge, antécédents médicaux).
+     *
+     * @param address Adresse à rechercher
+     * @return DTO avec numéro de caserne et liste des résidents (ou Optional.empty())
+     */
     // -------------------- /fire?address=xxx --------------------- //
     public Optional<FireAddressReturnDTO> getHouseholdInfoByAddress(String address) {
         List<Person> persons = dataLoader.getPersons().stream()
@@ -113,12 +153,22 @@ public class PersonService {
                             .build();
                 })
                 .collect(Collectors.toList());
-          Optional<FireAddressReturnDTO> result = Optional.of(FireAddressReturnDTO.builder()
-                  .stationNumber(firestationNumber.orElse(0))
-                  .residents(residents)
-                  .build());
+        Optional<FireAddressReturnDTO> result = Optional.of(FireAddressReturnDTO.builder()
+                .stationNumber(firestationNumber.orElse(0))
+                .residents(residents)
+                .build());
         return result;
     }
+
+    /**
+     * Récupère la liste des numéros de téléphone des résidents couverts par une caserne donnée.
+     * <p>
+     * Endpoint GET
+     * Sert à prévenir par SMS en cas d'urgence.
+     *
+     * @param stationNumber Numéro de la caserne
+     * @return DTO contenant la liste des numéros, ou Optional.empty() si aucun trouvé
+     */
     // -------------------- /phoneAlert?firestation=xx --------------------- //
     public Optional<PhoneAlertByFirestationDTO> getPhoneAlertByFirestation(int stationNumber) {
         List<String> addresses = firestationService.getAddressesByStationID(stationNumber);
@@ -137,6 +187,15 @@ public class PersonService {
         return result;
     }
 
+    /**
+     * Récupère les informations de tous les foyers desservis par une liste de casernes.
+     * <p>
+     * Endpoint  GET
+     * Retourne une map adresse -> liste de résidents (nom, téléphone, âge, antécédents médicaux).
+     *
+     * @param stationNumbers Liste de numéros de casernes à couvrir
+     * @return Map adresse -> liste de résidents avec infos
+     */
     // -------------------- /flood/stations?stations=xx,yy,zz --------------------- //
     public Map<String, List<FireAddressResidentDTO>> getFloodInfoByStations(List<Integer> stationNumbers) {
         List<String> addresses = firestationService.getAddressesByStationIDs(stationNumbers);
@@ -160,6 +219,15 @@ public class PersonService {
                 ));
     }
 
+    /**
+     * Récupère toutes les personnes portant un certain nom de famille,
+     * avec leur nom, adresse, âge, email, antécédents médicaux.
+     * <p>
+     * Endpoint  GET
+     *
+     * @param lastName Nom de famille à rechercher
+     * @return Liste d'informations pour chaque personne trouvée
+     */
     // -------------------- /personInfo?lastName=xxx --------------------- //
     public List<PersonInfoByNameDTO> getPersonsInfoByLastName(String lastName) {
         return dataLoader.getPersons().stream()
@@ -179,6 +247,14 @@ public class PersonService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Récupère les adresses email de tous les habitants d'une ville.
+     * <p>
+     * Endpoint  GET
+     *
+     * @param city Ville à rechercher
+     * @return Liste d'emails (sans doublons)
+     */
     // -------------------- /communityEmail?city=xxx --------------------- //
     public List<String> getEmailsByCity(String city) {
         return dataLoader.getPersons().stream()
@@ -191,6 +267,15 @@ public class PersonService {
 
 
     //-------------------------------------------------/EndPoints/----------------------------------------------//
+
+    /**
+     * Ajoute une nouvelle personne à la base de données.
+     * <p>
+     * Endpoint : POST /person
+     *
+     * @param person Personne à ajouter
+     * @return Optional avec la personne ajoutée, ou vide si déjà existant ou invalide
+     */
     // POST : Ajouter une nouvelle personne
     public Optional<Person> addPerson(Person person) {
         if(person.getFirstName() == null || person.getLastName() == null){return Optional.empty();}
@@ -207,6 +292,14 @@ public class PersonService {
         return Optional.of(person);
     }
 
+    /**
+     * Met à jour les champs d'une personne existante (hors prénom et nom).
+     * <p>
+     * Endpoint : PUT /person
+     *
+     * @param person Identifiant par prénom/nom et nouvelles valeurs à mettre à jour
+     * @return Optional avec la personne mise à jour, ou vide si non trouvée
+     */
     // PUT : Mettre à jour une personne existante (hors prénom et nom)
     public Optional<Person> updatePerson(Person person) {
         List<Person> persons = dataLoader.getPersons();
@@ -225,6 +318,15 @@ public class PersonService {
         return existingOpt;
     }
 
+    /**
+     * Supprime une personne de la base (par prénom et nom).
+     * <p>
+     * Endpoint : DELETE /person
+     *
+     * @param firstName Prénom à supprimer
+     * @param lastName  Nom à supprimer
+     * @return true si supprimée, false si introuvable
+     */
     // DELETE : Supprimer une personne (clé nom/prénom)
     public boolean deletePerson(String firstName, String lastName) {
         if(firstName== null || lastName == null){return false;}

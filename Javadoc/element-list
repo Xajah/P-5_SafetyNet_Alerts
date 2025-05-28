@@ -1,0 +1,9 @@
+com.openclassrooms.P_5_SafetyNet_Alerts
+com.openclassrooms.P_5_SafetyNet_Alerts.controller
+com.openclassrooms.P_5_SafetyNet_Alerts.data
+com.openclassrooms.P_5_SafetyNet_Alerts.IT
+com.openclassrooms.P_5_SafetyNet_Alerts.model
+com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO
+com.openclassrooms.P_5_SafetyNet_Alerts.repository
+com.openclassrooms.P_5_SafetyNet_Alerts.service
+com.openclassrooms.P_5_SafetyNet_Alerts.utils

@@ -4,11 +4,26 @@ import lombok.Builder;
 
 import java.util.List;
 
+/**
+ * DTO utilisé pour la réponse à /firestation.
+ * Contient la liste des personnes desservies par une caserne ainsi que le décompte des adultes et des enfants.
+ */
 @Data
 @Builder
-public class PersonsByFirestationIDReturn{
-    private List<PersonByFirestationID> persons;
-    private int countOfAdults;
-    private int countOfChilds;
+public class PersonsByFirestationIDReturn {
 
+    /**
+     * Liste des personnes couvertes par la caserne.
+     */
+    private List<PersonByFirestationID> persons;
+
+    /**
+     * Nombre d'adultes présents à cette adresse/couvert par cette caserne.
+     */
+    private int countOfAdults;
+
+    /**
+     * Nombre d'enfants présents à cette adresse/couvert par cette caserne.
+     */
+    private int countOfChilds;
 }
