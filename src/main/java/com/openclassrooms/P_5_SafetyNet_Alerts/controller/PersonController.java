@@ -63,7 +63,7 @@ public class PersonController {
         List<ChildAlertDTO> result = personService.getChildsByAdress(address);
         if (result.isEmpty()) {
             logger.error("GET /childAlert - NOT FOUND for address={}", address);
-            return ResponseEntity.status(404).body(result);
+            return ResponseEntity.status(404).build();
         }
         logger.info("GET /childAlert - OK for address={}", address);
         return ResponseEntity.ok(result);
