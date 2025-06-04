@@ -8,18 +8,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.util.MultiValueMap;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = PersonController.class)
 public class PersonControllerTest {
@@ -145,7 +146,7 @@ public class PersonControllerTest {
     }
 
     @Test
-    public void testGetChildsByAddress_noFound()throws Exception {
+    public void testGetChildsByAddress_noFound() throws Exception {
         when(personService.getChildsByAdress(NOT_FOUND_ADDRESS)).thenReturn(List.of());
 
         mockMvc.perform(get("/childAlert?address={address}", NOT_FOUND_ADDRESS))
@@ -284,13 +285,12 @@ public class PersonControllerTest {
         when(personService.deletePerson(anyString(), anyString())).thenReturn(true);
 
 
-
         mockMvc.perform(delete("/person?firstName=John&lastName=Doe")).andExpect(status().isOk());
     }
+
     @Test
     public void testDeletePerson_noDeleted() throws Exception {
         when(personService.deletePerson(anyString(), anyString())).thenReturn(false);
-
 
 
         mockMvc.perform(delete("/person?firstName=John&lastName=Doe")).andExpect(status().is(410));

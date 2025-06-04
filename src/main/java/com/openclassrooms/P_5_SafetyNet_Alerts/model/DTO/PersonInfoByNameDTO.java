@@ -1,8 +1,9 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO;
 
-import java.util.List;
-import lombok.Data;
 import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
 
 /**
  * DTO servant à transmettre toutes les informations détaillées d'une personne (via son nom/prénom).

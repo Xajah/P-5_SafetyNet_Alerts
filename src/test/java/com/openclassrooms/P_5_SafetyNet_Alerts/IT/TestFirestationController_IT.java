@@ -1,6 +1,5 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.IT;
 
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openclassrooms.P_5_SafetyNet_Alerts.data.DataLoader;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.Firestation;
@@ -12,8 +11,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -28,8 +34,17 @@ public class TestFirestationController_IT {
     @Autowired
     DataLoader dataLoader;
 
+    private static final String ORIGINAL_DATA_PATH = "/Data/data-original.json";
+    private static final String WORKING_DATA_PATH = "Data/data.json";
+
     @BeforeEach
-    void resetDataLoader () throws Exception{
+    void restoreDataFileBeforeEachTest() throws Exception {
+
+        try (InputStream is = getClass().getResourceAsStream(ORIGINAL_DATA_PATH)) {
+            if (is == null) throw new RuntimeException("data-original.json missing from src/test/resources/Data/");
+            Files.copy(is, Path.of(WORKING_DATA_PATH), StandardCopyOption.REPLACE_EXISTING);
+        }
+
         dataLoader.run();
     }
 
@@ -46,6 +61,12 @@ public class TestFirestationController_IT {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.address").value("100 New St"))
                 .andExpect(jsonPath("$.station").value(7));
+        dataLoader.run();
+        boolean exists = dataLoader.getFirestations()
+                .stream()
+                .anyMatch(fire -> "100 New St".equalsIgnoreCase(fire.getAddress()) && fire.getStation() == 7);
+
+        assertTrue(exists, "La nouvelle caserne devrait être présente dans les données persistées");
     }
 
     @Test
@@ -64,7 +85,6 @@ public class TestFirestationController_IT {
 
     @Test
     void testUpdateFirestation_found() throws Exception {
-        // MAJ sur une firestation déjà existante
         Firestation f = Firestation.builder()
                 .address("1509 Culver St")
                 .station(7)
@@ -107,7 +127,6 @@ public class TestFirestationController_IT {
 
     @Test
     void testDeleteFirestation_byId_found() throws Exception {
-        // Suppose id=3 existe
         mockMvc.perform(delete("/firestation")
                         .param("firestation", "1"))
                 .andExpect(status().isOk());
@@ -116,10 +135,7 @@ public class TestFirestationController_IT {
     @Test
     void testDeleteFirestation_byId_notFound() throws Exception {
         mockMvc.perform(delete("/firestation")
-
                         .param("firestation", "99"))
                 .andExpect(status().isGone());
     }
-
 }
-

@@ -1,8 +1,7 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO;
 
-import lombok.Data;
 import lombok.Builder;
-import java.util.List;
+import lombok.Data;
 
 /**
  * DTO représentant un membre du foyer, utilisé notamment dans les réponses de type childAlert.

@@ -1,10 +1,10 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.utils;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
 public class DateUtilsTest {

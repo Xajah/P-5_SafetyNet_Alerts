@@ -11,14 +11,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -35,11 +38,20 @@ public class TestMedicalRecordController_IT {
     @Autowired
     DataLoader dataLoader;
 
+    // Chemins pour la rémanence des données
+    private static final String ORIGINAL_DATA_PATH = "/Data/data-original.json";
+    private static final String WORKING_DATA_PATH = "Data/data.json";
+
     @BeforeEach
-    void resetDataLoader () throws Exception{
+    void restoreDataFileBeforeEachTest() throws Exception {
+
+        try (InputStream is = getClass().getResourceAsStream(ORIGINAL_DATA_PATH)) {
+            if (is == null) throw new RuntimeException("data-original.json missing from src/test/resources/Data/");
+            Files.copy(is, Path.of(WORKING_DATA_PATH), StandardCopyOption.REPLACE_EXISTING);
+        }
+
         dataLoader.run();
     }
-
 
     @Test
     void testAddMedicalRecord_ok() throws Exception {
@@ -127,4 +139,3 @@ public class TestMedicalRecordController_IT {
                 .andExpect(status().isGone());
     }
 }
-

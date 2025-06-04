@@ -11,6 +11,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -24,20 +29,29 @@ public class TestPersonController_IT {
 
     @Autowired
     ObjectMapper objectMapper;
+
     @Autowired
     DataLoader dataLoader;
 
+    // Chemins pour la restauration du jeu de données
+    private static final String ORIGINAL_DATA_PATH = "/Data/data-original.json";
+    private static final String WORKING_DATA_PATH = "Data/data.json";
+
     @BeforeEach
-    void resetDataLoader () throws Exception{
+    void restoreDataFileBeforeEachTest() throws Exception {
+
+        try (InputStream is = getClass().getResourceAsStream(ORIGINAL_DATA_PATH)) {
+            if (is == null) throw new RuntimeException("data-original.json missing from src/test/resources/Data/");
+            Files.copy(is, Path.of(WORKING_DATA_PATH), StandardCopyOption.REPLACE_EXISTING);
+        }
+
         dataLoader.run();
     }
+
 
     // /firestation?stationNumber=1
     @Test
     void testGetPersonsByFirestationId_found() throws Exception {
-        // Data: station 1 : 947 E. Rose Dr (3 pers), 644 Gershwin Cir, 908 73rd St
-        // Enfants : il n'y a qu'un enfant Kendrik Stelzer né en 2014
-        // Adultes : Brian, Shawna, Peter, Jamie, Reginold (5 adultes)
         mockMvc.perform(get("/firestation?stationNumber=1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.countOfAdults").value(5))
@@ -51,14 +65,12 @@ public class TestPersonController_IT {
                 .andExpect(content().string(""));
     }
 
-    // /childAlert?address=1509 Culver St
     @Test
     void testGetChildsByAddress_found() throws Exception {
-        // A cette adresse, selon data, enfants: Tenley (2012) et Roger (2017)
         mockMvc.perform(get("/childAlert")
                         .param("address", "1509 Culver St"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2))) // tableau de 2 enfants
+                .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].firstName", anyOf(is("Tenley"), is("Roger"))))
                 .andExpect(jsonPath("$[1].firstName", anyOf(is("Tenley"), is("Roger"))));
     }
@@ -70,11 +82,8 @@ public class TestPersonController_IT {
                 .andExpect(content().string(""));
     }
 
-    // /phoneAlert?firestation=3
     @Test
     void testGetPhonesByFirestationID_found() throws Exception {
-        // Firestation 3 : 1509 Culver St, 834 Binoc Ave, 748 Townings Dr, 112 Steppes Pl
-        // Vérif présence de numéro '841-874-6512' (John Boyd )
         mockMvc.perform(get("/phoneAlert")
                         .param("firestation", "3"))
                 .andExpect(status().isOk())
@@ -87,7 +96,6 @@ public class TestPersonController_IT {
                 .andExpect(status().isNotFound());
     }
 
-    // /fire?address=834 Binoc Ave
     @Test
     void testGetStationAndPeopleForAFire_found() throws Exception {
         mockMvc.perform(get("/fire")
@@ -101,16 +109,14 @@ public class TestPersonController_IT {
     void testGetStationAndPeopleForAFire_notFound() throws Exception {
         mockMvc.perform(get("/fire?address=Unknown"))
                 .andExpect(status().isNotFound());
-        //peut etre traiter comme une liste vide -> pour une liste vide pas 404, 200 avec vide -> a verifier ce cas et la gestion
     }
 
-    // /flood/stations?stations=1,3
     @Test
     void testGetFloodInfoByStations_found() throws Exception {
         mockMvc.perform(get("/flood/stations")
                         .param("stations", "1,3"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$['1509 Culver St']").exists()); // Couvre bien une adresse de la station 3
+                .andExpect(jsonPath("$['1509 Culver St']").exists());
     }
 
     @Test
@@ -119,10 +125,8 @@ public class TestPersonController_IT {
                 .andExpect(status().isNotFound());
     }
 
-    // /personInfo?lastName=Boyd
     @Test
     void testGetPersonInfoByName_found() throws Exception {
-        // 6 Boyd (John, Jacob, Tenley, Roger, Felicia, Allison) dans la data
         mockMvc.perform(get("/personInfo")
                         .param("lastName", "Boyd"))
                 .andExpect(status().isOk())
@@ -139,10 +143,8 @@ public class TestPersonController_IT {
                 .andExpect(status().isNotFound());
     }
 
-    // /communityEmail?city=Culver
     @Test
     void testGetEmailsByCity_found() throws Exception {
-        // Beaucoup d'emails en ville Culver
         mockMvc.perform(get("/communityEmail")
                         .param("city", "Culver"))
                 .andExpect(status().isOk())
@@ -157,7 +159,6 @@ public class TestPersonController_IT {
     }
 
     // TESTS CRUD Person
-
     @Test
     void testAddPerson_ok() throws Exception {
         Person p = Person.builder()
@@ -180,7 +181,6 @@ public class TestPersonController_IT {
 
     @Test
     void testAddPerson_conflict() throws Exception {
-        // John Boyd already exists in dataset
         Person p = Person.builder()
                 .firstName("John")
                 .lastName("Boyd")
@@ -199,7 +199,6 @@ public class TestPersonController_IT {
 
     @Test
     void testUpdatePerson_found() throws Exception {
-        // Changer le numéro de Felicia Boyd
         Person p = Person.builder()
                 .firstName("Felicia")
                 .lastName("Boyd")
@@ -251,5 +250,4 @@ public class TestPersonController_IT {
                         .param("lastName", "Here"))
                 .andExpect(status().isGone());
     }
-
 }

@@ -1,7 +1,8 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO;
 
-import lombok.Data;
 import lombok.Builder;
+import lombok.Data;
+
 import java.util.List;
 
 /**

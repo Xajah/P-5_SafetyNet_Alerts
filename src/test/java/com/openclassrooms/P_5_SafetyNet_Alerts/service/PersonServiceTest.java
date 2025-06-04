@@ -1,10 +1,9 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.service;
 
 import com.openclassrooms.P_5_SafetyNet_Alerts.data.DataLoader;
+import com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO.*;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.MedicalRecord;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.Person;
-import com.openclassrooms.P_5_SafetyNet_Alerts.model.Firestation;
-import com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,10 +43,10 @@ class PersonServiceTest {
                 Person.builder().firstName("Peter").lastName("Duncan").address("29 15th St").city("Springfield").phone("444-4444").email("peter@domain.com").build()
         ));
         medicalRecordsMock = Arrays.asList(
-                MedicalRecord.builder().firstName("John").lastName("Boyd").birthdate(LocalDate.parse("03/06/1984", formatter)).medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg")).allergies(Arrays.asList("nillacilan")).build(),
-                MedicalRecord.builder().firstName("Jacob").lastName("Boyd").birthdate(LocalDate.parse("03/06/1989", formatter)).medications(Arrays.asList("pharmacol:5000mg", "terazine:10mg", "noznazol:250mg")).allergies(Arrays.asList()).build(),
-                MedicalRecord.builder().firstName("Tenley").lastName("Boyd").birthdate(LocalDate.parse("02/18/2012", formatter)).medications(Arrays.asList()).allergies(Arrays.asList("peanut")).build(),
-                MedicalRecord.builder().firstName("Peter").lastName("Duncan").birthdate(LocalDate.parse("09/06/2000", formatter)).medications(Arrays.asList("dodoxadin:30mg")).allergies(Arrays.asList("shellfish")).build()
+                MedicalRecord.builder().firstName("John").lastName("Boyd").birthdate(LocalDate.parse("03/06/1984", formatter)).medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg")).allergies(List.of("nillacilan")).build(),
+                MedicalRecord.builder().firstName("Jacob").lastName("Boyd").birthdate(LocalDate.parse("03/06/1989", formatter)).medications(Arrays.asList("pharmacol:5000mg", "terazine:10mg", "noznazol:250mg")).allergies(List.of()).build(),
+                MedicalRecord.builder().firstName("Tenley").lastName("Boyd").birthdate(LocalDate.parse("02/18/2012", formatter)).medications(List.of()).allergies(List.of("peanut")).build(),
+                MedicalRecord.builder().firstName("Peter").lastName("Duncan").birthdate(LocalDate.parse("09/06/2000", formatter)).medications(List.of("dodoxadin:30mg")).allergies(List.of("shellfish")).build()
         );
         serviceUnderTest = new PersonService(dataLoader, medicalRecordService, firestationService);
     }
@@ -86,7 +85,7 @@ class PersonServiceTest {
     @Test
     void testGetAllPersonsByDependingOfFirestationID_noMedicalRecord() {
         when(firestationService.getAddressesByStationID(1)).thenReturn(Collections.singletonList("1509 Culver St"));
-        when(dataLoader.getPersons()).thenReturn(Arrays.asList(
+        when(dataLoader.getPersons()).thenReturn(Collections.singletonList(
                 Person.builder().firstName("NoMR").lastName("NoMR").address("1509 Culver St").build()
         ));
         when(medicalRecordService.getMedicalRecordByName(anyString(), anyString())).thenReturn(Optional.empty());
@@ -138,7 +137,7 @@ class PersonServiceTest {
     @Test
     void testGetHouseholdInfoByAddress_noMedicalRecord() {
 
-        when(dataLoader.getPersons()).thenReturn(Arrays.asList(
+        when(dataLoader.getPersons()).thenReturn(Collections.singletonList(
                 Person.builder().firstName("Foo").lastName("Bar").address("1509 Culver St").build()
         ));
 
@@ -175,10 +174,10 @@ class PersonServiceTest {
 
     @Test
     void testGetFloodInfoByStations_someAddressesEmpty() {
-        when(firestationService.getAddressesByStationIDs(Arrays.asList(1,2)))
+        when(firestationService.getAddressesByStationIDs(Arrays.asList(1, 2)))
                 .thenReturn(Arrays.asList("1509 Culver St", "EmptyAddr"));
         when(dataLoader.getPersons()).thenReturn(personsMock);
-        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(Arrays.asList(1,2));
+        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(Arrays.asList(1, 2));
         assertNotNull(result);
         assertTrue(result.containsKey("EmptyAddr"));
         assertTrue(result.get("EmptyAddr").isEmpty());
@@ -197,7 +196,7 @@ class PersonServiceTest {
         List<PersonInfoByNameDTO> result = serviceUnderTest.getPersonsInfoByLastName("Boyd");
         assertNotNull(result);
         assertFalse(result.isEmpty());
-        for(var r : result) assertEquals("Boyd", r.getLastName());
+        for (var r : result) assertEquals("Boyd", r.getLastName());
     }
 
     @Test
@@ -224,6 +223,7 @@ class PersonServiceTest {
         assertNotNull(emails);
         assertTrue(emails.isEmpty());
     }
+
     @Test
     void testGetChildsByAddress_noResidents() {
         when(dataLoader.getPersons()).thenReturn(Collections.emptyList());
@@ -235,7 +235,7 @@ class PersonServiceTest {
     @Test
     void testGetChildsByAddress_allAdults() {
         // Peter Duncan est adulte selon la date donnée dans mock
-        when(dataLoader.getPersons()).thenReturn(Arrays.asList(
+        when(dataLoader.getPersons()).thenReturn(Collections.singletonList(
                 Person.builder().firstName("Peter").lastName("Duncan").address("29 15th St").build()
         ));
         when(medicalRecordService.getMedicalRecordByName(any(), any()))
@@ -249,7 +249,7 @@ class PersonServiceTest {
 
     @Test
     void testGetChildsByAddress_childWithNoMedicalRecord() {
-        when(dataLoader.getPersons()).thenReturn(Arrays.asList(
+        when(dataLoader.getPersons()).thenReturn(Collections.singletonList(
                 Person.builder().firstName("Kid").lastName("Test").address("66 Kids St").build()
         ));
         when(medicalRecordService.getMedicalRecordByName(any(), any())).thenReturn(Optional.empty());
@@ -261,6 +261,7 @@ class PersonServiceTest {
         assertEquals("Kid", result.get(0).getFirstName());
         assertEquals(0, result.get(0).getAge());
     }
+
     @Test
     void testGetPhoneAlertByFirestation_noAddresses() {
         when(firestationService.getAddressesByStationID(42)).thenReturn(Collections.emptyList());
@@ -275,7 +276,7 @@ class PersonServiceTest {
     @Test
     void testGetPhoneAlertByFirestation_nullPhoneValues() {
         when(firestationService.getAddressesByStationID(1)).thenReturn(Collections.singletonList("1509 Culver St"));
-        when(dataLoader.getPersons()).thenReturn(Arrays.asList(
+        when(dataLoader.getPersons()).thenReturn(Collections.singletonList(
                 Person.builder().firstName("X").lastName("Y").address("1509 Culver St").phone(null).build()
         ));
 
@@ -284,20 +285,21 @@ class PersonServiceTest {
         assertTrue(result.isEmpty());
 
     }
+
     @Test
     void testGetFloodInfoByStations_noAddresses() {
-        when(firestationService.getAddressesByStationIDs(Arrays.asList(99))).thenReturn(Collections.emptyList());
-        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(Arrays.asList(99));
+        when(firestationService.getAddressesByStationIDs(List.of(99))).thenReturn(Collections.emptyList());
+        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(List.of(99));
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
 
     @Test
     void testGetFloodInfoByStations_addressButNoPerson() {
-        when(firestationService.getAddressesByStationIDs(Arrays.asList(1))).thenReturn(Collections.singletonList("EmptyHouse"));
+        when(firestationService.getAddressesByStationIDs(List.of(1))).thenReturn(Collections.singletonList("EmptyHouse"));
         when(dataLoader.getPersons()).thenReturn(Collections.emptyList());
 
-        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(Arrays.asList(1));
+        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(List.of(1));
         assertNotNull(result);
         assertTrue(result.containsKey("EmptyHouse"));
         assertTrue(result.get("EmptyHouse").isEmpty());
@@ -305,16 +307,17 @@ class PersonServiceTest {
 
     @Test
     void testGetFloodInfoByStations_personNoMedicalRecord() {
-        when(firestationService.getAddressesByStationIDs(Arrays.asList(1))).thenReturn(Collections.singletonList("1509 Culver St"));
-        when(dataLoader.getPersons()).thenReturn(Arrays.asList(
+        when(firestationService.getAddressesByStationIDs(List.of(1))).thenReturn(Collections.singletonList("1509 Culver St"));
+        when(dataLoader.getPersons()).thenReturn(Collections.singletonList(
                 Person.builder().firstName("Nommr").lastName("Nommr").address("1509 Culver St").phone("07-07").build()
         ));
         when(medicalRecordService.getMedicalRecordByName(any(), any())).thenReturn(Optional.empty());
-        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(Arrays.asList(1));
+        Map<String, List<FireAddressResidentDTO>> result = serviceUnderTest.getFloodInfoByStations(List.of(1));
         assertNotNull(result);
         assertEquals(1, result.get("1509 Culver St").size());
         assertEquals(0, result.get("1509 Culver St").get(0).getAge());
     }
+
     @Test
     void testGetEmailsByCity_duplicates() {
         when(dataLoader.getPersons()).thenReturn(Arrays.asList(
@@ -451,7 +454,6 @@ class PersonServiceTest {
         assertFalse(result);
         assertEquals(sizeBefore, personsMock.size());
     }
-
 
 
 }

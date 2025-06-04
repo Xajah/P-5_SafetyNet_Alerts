@@ -13,13 +13,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(exclude = {org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class})
 public class P5SafetyNetAlertsApplication {
 
-	/**
-	 * Point d'entrée principal de l'application.
-	 *
-	 * @param args arguments de la ligne de commande
-	 */
-	public static void main(String[] args) {
-		SpringApplication.run(P5SafetyNetAlertsApplication.class, args);
-	}
+    /**
+     * Point d'entrée principal de l'application.
+     *
+     * @param args arguments de la ligne de commande
+     */
+    public static void main(String[] args) {
+        SpringApplication.run(P5SafetyNetAlertsApplication.class, args);
+    }
 }
 

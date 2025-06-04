@@ -1,8 +1,9 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO;
 
-import java.util.List;
-import lombok.Data;
 import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
 
 /**
  * DTO utilisé pour la réponse à la requête /fire.

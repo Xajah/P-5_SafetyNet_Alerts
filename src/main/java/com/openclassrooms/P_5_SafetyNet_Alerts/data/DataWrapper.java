@@ -4,6 +4,7 @@ import com.openclassrooms.P_5_SafetyNet_Alerts.model.Firestation;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.MedicalRecord;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.Person;
 import lombok.Data;
+
 import java.util.List;
 
 /**
@@ -15,18 +16,18 @@ import java.util.List;
 @Data
 public class DataWrapper {
 
-      /**
-       * Liste des personnes présentes dans les données.
-       */
-      private List<Person> persons;
+    /**
+     * Liste des personnes présentes dans les données.
+     */
+    private List<Person> persons;
 
-      /**
-       * Liste des associations adresse-caserne présentes dans les données.
-       */
-      private List<Firestation> firestations;
+    /**
+     * Liste des associations adresse-caserne présentes dans les données.
+     */
+    private List<Firestation> firestations;
 
-      /**
-       * Liste des dossiers médicaux présents dans les données.
-       */
-      private List<MedicalRecord> medicalrecords;
+    /**
+     * Liste des dossiers médicaux présents dans les données.
+     */
+    private List<MedicalRecord> medicalrecords;
 }

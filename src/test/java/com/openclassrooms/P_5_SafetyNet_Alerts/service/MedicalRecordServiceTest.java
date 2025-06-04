@@ -8,11 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.lang.reflect.Array;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -37,7 +33,7 @@ public class MedicalRecordServiceTest {
     public DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
 
     @BeforeEach
-    public void setUp(){
+    public void setUp() {
 
 
         medicalRecordsMock = new ArrayList<>(Arrays.asList(
@@ -46,71 +42,75 @@ public class MedicalRecordServiceTest {
                         .lastName("Boyd")
                         .birthdate(LocalDate.parse("03/06/1984", formatter))
                         .medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg"))
-                        .allergies(Arrays.asList("nillacilan"))
+                        .allergies(List.of("nillacilan"))
                         .build(),
                 MedicalRecord.builder()
                         .firstName("Jacob")
                         .lastName("Boyd")
                         .birthdate(LocalDate.parse("03/06/1989", formatter))
                         .medications(Arrays.asList("pharmacol:5000mg", "terazine:10mg", "noznazol:250mg"))
-                        .allergies(Arrays.asList())
+                        .allergies(List.of())
                         .build(),
                 MedicalRecord.builder()
                         .firstName("Tenley")
                         .lastName("Boyd")
                         .birthdate(LocalDate.parse("02/18/2012", formatter))
-                        .medications(Arrays.asList())
-                        .allergies(Arrays.asList("peanut"))
+                        .medications(List.of())
+                        .allergies(List.of("peanut"))
                         .build(),
                 MedicalRecord.builder()
                         .firstName("Peter")
                         .lastName("Duncan")
                         .birthdate(LocalDate.parse("09/06/2000", formatter))
-                        .medications(Arrays.asList("dodoxadin:30mg"))
-                        .allergies(Arrays.asList("shellfish"))
+                        .medications(List.of("dodoxadin:30mg"))
+                        .allergies(List.of("shellfish"))
                         .build()
         ));
         serviceUnderTest = new MedicalRecordService(dataLoader);
     }
-              @Test
-            public void testGetMedicalRecordByName_found(){
-        //Arrange
-                  when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
-                  //Act
-                  Optional<MedicalRecord> result = serviceUnderTest.getMedicalRecordByName("John","Boyd");
-                  Optional<MedicalRecord> expected = Optional.of(MedicalRecord.builder()
-                          .firstName("John")
-                          .lastName("Boyd")
-                          .birthdate(LocalDate.parse("03/06/1984", formatter))
-                          .medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg"))
-                          .allergies(Arrays.asList("nillacilan"))
-                          .build());
-                  //assert
-                  assertEquals(result, expected );
-              }
+
     @Test
-    public void testGetMedicalRecordByName_noneFound(){
+    public void testGetMedicalRecordByName_found() {
         //Arrange
         when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
         //Act
-        Optional<MedicalRecord> result = serviceUnderTest.getMedicalRecordByName("Marc","Valerie");
+        Optional<MedicalRecord> result = serviceUnderTest.getMedicalRecordByName("John", "Boyd");
+        Optional<MedicalRecord> expected = Optional.of(MedicalRecord.builder()
+                .firstName("John")
+                .lastName("Boyd")
+                .birthdate(LocalDate.parse("03/06/1984", formatter))
+                .medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg"))
+                .allergies(List.of("nillacilan"))
+                .build());
+        //assert
+        assertEquals(result, expected);
+    }
+
+    @Test
+    public void testGetMedicalRecordByName_noneFound() {
+        //Arrange
+        when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
+        //Act
+        Optional<MedicalRecord> result = serviceUnderTest.getMedicalRecordByName("Marc", "Valerie");
 
         //assert
         assertEquals(result, Optional.empty());
     }
+
     @Test
-    public void testGetMedicalRecordByName_getMRSnull(){
+    public void testGetMedicalRecordByName_getMRSnull() {
         //Arrange
-        when(dataLoader.getMedicalRecords()).thenReturn(Arrays.asList());
+        when(dataLoader.getMedicalRecords()).thenReturn(List.of());
         //Act
-        Optional<MedicalRecord> result = serviceUnderTest.getMedicalRecordByName("John","Boyd");
+        Optional<MedicalRecord> result = serviceUnderTest.getMedicalRecordByName("John", "Boyd");
 
         //Assert
-        assertEquals(result,Optional.empty());
+        assertEquals(result, Optional.empty());
 
     }
+
     @Test
-    public void testGetMedicalRecords(){
+    public void testGetMedicalRecords() {
         //Arrange
         when(dataLoader.getMedicalRecords()).thenReturn(medicalRecordsMock);
         //Act
@@ -120,14 +120,14 @@ public class MedicalRecordServiceTest {
                 .lastName("Boyd")
                 .birthdate(LocalDate.parse("03/06/1984", formatter))
                 .medications(Arrays.asList("aznol:350mg", "hydrapermazol:100mg"))
-                .allergies(Arrays.asList("nillacilan"))
+                .allergies(List.of("nillacilan"))
                 .build();
         MedicalRecord expected2 = MedicalRecord.builder()
                 .firstName("Tenley")
                 .lastName("Boyd")
                 .birthdate(LocalDate.parse("02/18/2012", formatter))
-                .medications(Arrays.asList())
-                .allergies(Arrays.asList("peanut"))
+                .medications(List.of())
+                .allergies(List.of("peanut"))
                 .build();
 
         assertFalse(result.isEmpty(), "La Liste de Medical Records est vide");
@@ -135,8 +135,9 @@ public class MedicalRecordServiceTest {
         assertTrue(result.contains(expected2));
 
     }
+
     @Test
-    public void testGetMedicalRecords_dataNull(){
+    public void testGetMedicalRecords_dataNull() {
         //Arrange
         when(dataLoader.getMedicalRecords()).thenReturn(null);
         //Act
@@ -153,8 +154,8 @@ public class MedicalRecordServiceTest {
         MedicalRecord record = MedicalRecord.builder()
                 .firstName("Rick").lastName("Sanchez")
                 .birthdate(LocalDate.parse("12/05/1967", formatter))
-                .medications(Arrays.asList("alcohol:lots"))
-                .allergies(Arrays.asList("none")).build();
+                .medications(List.of("alcohol:lots"))
+                .allergies(List.of("none")).build();
 
         Optional<MedicalRecord> result = serviceUnderTest.addMedicalRecord(record);
 
@@ -170,7 +171,7 @@ public class MedicalRecordServiceTest {
         MedicalRecord record = MedicalRecord.builder()
                 .firstName("John").lastName("Boyd")
                 .birthdate(LocalDate.parse("01/01/2000", formatter))
-                .medications(Arrays.asList()).allergies(Arrays.asList()).build();
+                .medications(List.of()).allergies(List.of()).build();
 
         Optional<MedicalRecord> result = serviceUnderTest.addMedicalRecord(record);
 
@@ -213,16 +214,16 @@ public class MedicalRecordServiceTest {
         MedicalRecord update = MedicalRecord.builder()
                 .firstName("Tenley").lastName("Boyd")
                 .birthdate(LocalDate.parse("12/31/2020", formatter))
-                .medications(Arrays.asList("ibuprofen:200mg"))
-                .allergies(Arrays.asList("dust"))
+                .medications(List.of("ibuprofen:200mg"))
+                .allergies(List.of("dust"))
                 .build();
 
         Optional<MedicalRecord> result = serviceUnderTest.updateMedicalRecord(update);
 
         assertTrue(result.isPresent());
         assertEquals(LocalDate.parse("12/31/2020", formatter), result.get().getBirthdate());
-        assertEquals(Arrays.asList("ibuprofen:200mg"), result.get().getMedications());
-        assertEquals(Arrays.asList("dust"), result.get().getAllergies());
+        assertEquals(List.of("ibuprofen:200mg"), result.get().getMedications());
+        assertEquals(List.of("dust"), result.get().getAllergies());
     }
 
     @Test

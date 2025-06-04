@@ -1,8 +1,9 @@
 package com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO;
 
-import lombok.Data;
-import java.util.List;
 import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
 
 /**
  * DTO utilisé pour transmettre la liste des numéros de téléphone relevés pour une caserne donnée.

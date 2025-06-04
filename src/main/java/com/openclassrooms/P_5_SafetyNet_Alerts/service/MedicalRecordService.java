@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
 /**
  * Service métier dédié à la gestion des dossiers médicaux ({@link MedicalRecord}).
  * <p>
@@ -35,7 +36,7 @@ public class MedicalRecordService {
      * Retourne l'enregistrement médical d'une personne par prénom et nom.
      *
      * @param firstName prénom
-     * @param lastName nom
+     * @param lastName  nom
      * @return Optional contenant le dossier médical trouvé, ou vide si absent
      */
     public Optional<MedicalRecord> getMedicalRecordByName(String firstName, String lastName) {
@@ -54,17 +55,23 @@ public class MedicalRecordService {
      * @return Optional du MedicalRecord ajouté, vide si déjà présent ou invalide
      */
     //POST - Creation d'un nouveau registre medicale
-    public Optional<MedicalRecord> addMedicalRecord(MedicalRecord medicalRecord){
-        if(medicalRecord.getFirstName() == null || medicalRecord.getLastName() == null){return Optional.empty();}
-        List<MedicalRecord> medicalRecords =dataLoader.getMedicalRecords();
-        if (medicalRecords.isEmpty()){return Optional.empty();}
+    public Optional<MedicalRecord> addMedicalRecord(MedicalRecord medicalRecord) {
+        if (medicalRecord.getFirstName() == null || medicalRecord.getLastName() == null) {
+            return Optional.empty();
+        }
+        List<MedicalRecord> medicalRecords = dataLoader.getMedicalRecords();
+        if (medicalRecords.isEmpty()) {
+            return Optional.empty();
+        }
 
         Boolean exist = medicalRecords.stream()
                 .anyMatch(m -> m.getFirstName().equalsIgnoreCase(medicalRecord.getFirstName())
                         && m.getLastName().equalsIgnoreCase(medicalRecord.getLastName()));
-        if(exist){
-            return Optional.empty();}
+        if (exist) {
+            return Optional.empty();
+        }
         medicalRecords.add(medicalRecord);
+        dataLoader.saveData();
         return Optional.of(medicalRecord);
     }
 
@@ -76,10 +83,14 @@ public class MedicalRecordService {
      * @return Optional du MedicalRecord modifié, vide si non trouvé
      */
     //PUT - Modification d'un registre medical existant
-    public Optional<MedicalRecord> updateMedicalRecord(MedicalRecord medicalRecord){
-        if(medicalRecord.getFirstName() == null || medicalRecord.getLastName() == null){return Optional.empty();}
+    public Optional<MedicalRecord> updateMedicalRecord(MedicalRecord medicalRecord) {
+        if (medicalRecord.getFirstName() == null || medicalRecord.getLastName() == null) {
+            return Optional.empty();
+        }
         List<MedicalRecord> medicalRecords = dataLoader.getMedicalRecords();
-        if (medicalRecords.isEmpty()){return Optional.empty();}
+        if (medicalRecords.isEmpty()) {
+            return Optional.empty();
+        }
 
         Optional<MedicalRecord> resultOpt = medicalRecords.stream().filter(m ->
                 m.getFirstName().equalsIgnoreCase(medicalRecord.getFirstName()) && m.getLastName().equalsIgnoreCase(medicalRecord.getLastName())).findFirst();
@@ -87,7 +98,9 @@ public class MedicalRecordService {
         resultOpt.ifPresent(r -> {
             r.setMedications(medicalRecord.getMedications());
             r.setBirthdate(medicalRecord.getBirthdate());
-            r.setAllergies(medicalRecord.getAllergies());  } );
+            r.setAllergies(medicalRecord.getAllergies());
+            dataLoader.saveData();
+        });
         return resultOpt;
     }
 
@@ -96,14 +109,20 @@ public class MedicalRecordService {
      * Endpoint: DELETE /medicalRecord
      *
      * @param firstName prénom de la personne
-     * @param lastName nom de la personne
+     * @param lastName  nom de la personne
      * @return true si supprimé, false sinon
      */
     //DELETE : Supprimer un registre medical
-    public  Boolean deleteMedicalRecord(String firstName, String lastName){
-        if(firstName == null || lastName == null){return false;}
+    public Boolean deleteMedicalRecord(String firstName, String lastName) {
+        if (firstName == null || lastName == null) {
+            return false;
+        }
         List<MedicalRecord> medicalRecords = dataLoader.getMedicalRecords();
-        if (medicalRecords.isEmpty()){return false;}
+        if (medicalRecords.isEmpty()) {
+            return false;
+        }
+
+        dataLoader.saveData();
 
         return medicalRecords.removeIf(m ->
                 m.getLastName().equalsIgnoreCase(lastName) && m.getFirstName().equalsIgnoreCase(firstName));

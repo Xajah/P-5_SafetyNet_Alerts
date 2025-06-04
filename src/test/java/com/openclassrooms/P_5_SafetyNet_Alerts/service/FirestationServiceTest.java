@@ -2,7 +2,6 @@ package com.openclassrooms.P_5_SafetyNet_Alerts.service;
 
 import com.openclassrooms.P_5_SafetyNet_Alerts.data.DataLoader;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.Firestation;
-import com.openclassrooms.P_5_SafetyNet_Alerts.model.Person;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class FirestationServiceTest {
@@ -160,6 +159,7 @@ class FirestationServiceTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
     }
+
     @Test
     void testGetFirestationNumberByAddress_found() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);
@@ -193,26 +193,25 @@ class FirestationServiceTest {
 
     //---------EndPoint--------//
     @Test
-    void testAddFirestation_added(){
+    void testAddFirestation_added() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);
 
         Firestation firestation = Firestation.builder().station(9).address("9 Asimov street").build();
 
 
-
         Optional<Firestation> result = serviceUnderTest.addFirestation(firestation);
 
         assertNotNull(result);
-        assertEquals(result.get().getAddress(),"9 Asimov street");
-        assertEquals(result.get().getStation(),9);
+        assertEquals(result.get().getAddress(), "9 Asimov street");
+        assertEquals(result.get().getStation(), 9);
 
     }
+
     @Test
-    void testAddFirestation_notAdded_EverExist  (){
+    void testAddFirestation_notAdded_EverExist() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);
 
         Firestation firestation = Firestation.builder().station(9).address("1509 Culver St").build();
-
 
 
         Optional<Firestation> result = serviceUnderTest.addFirestation(firestation);
@@ -220,15 +219,16 @@ class FirestationServiceTest {
         assertTrue(result.isEmpty());
 
     }
+
     @Test
-    void testAddFirestation_NoData () {
-        when(dataLoader.getFirestations()).thenReturn(Arrays.asList());
+    void testAddFirestation_NoData() {
+        when(dataLoader.getFirestations()).thenReturn(List.of());
 
-       Firestation firestation = Firestation.builder().station(9).address("22 Damasio street").build();
+        Firestation firestation = Firestation.builder().station(9).address("22 Damasio street").build();
 
-       Optional<Firestation> result = serviceUnderTest.addFirestation(firestation);
+        Optional<Firestation> result = serviceUnderTest.addFirestation(firestation);
 
-       assertTrue(result.isEmpty() );
+        assertTrue(result.isEmpty());
 
 
     }
@@ -241,6 +241,7 @@ class FirestationServiceTest {
 
         assertTrue(result.isEmpty(), "L’ajout doit échouer si l’adresse est null");
     }
+
     @Test
     void testUpdateFirestation_Success() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);
@@ -254,6 +255,7 @@ class FirestationServiceTest {
 
         assertEquals(42, firestationsMock.get(3).getStation());
     }
+
     @Test
     void testUpdateFirestation_EmptyList() {
         when(dataLoader.getFirestations()).thenReturn(Collections.emptyList());
@@ -264,6 +266,7 @@ class FirestationServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
     @Test
     void testUpdateFirestation_NotFound() {
         firestationsMock.add(Firestation.builder().station(1).address("10 Dupontel street").build());
@@ -275,6 +278,7 @@ class FirestationServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
     @Test
     void testUpdateFirestation_NullAddress() {
         firestationsMock.add(Firestation.builder().station(5).address("15 Glukovsky Street").build());
@@ -286,6 +290,7 @@ class FirestationServiceTest {
 
         assertTrue(result.isEmpty());
     }
+
     @Test
     void testDeleteFirestationMappingByAdress_Success() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);
@@ -297,6 +302,7 @@ class FirestationServiceTest {
         assertEquals(sizeBefore - 1, firestationsMock.size()); // Il reste trois entrées
         assertTrue(firestationsMock.stream().noneMatch(f -> "834 Binoc Ave".equalsIgnoreCase(f.getAddress())));
     }
+
     @Test
     void testDeleteFirestationMappingById_Success() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);
@@ -309,6 +315,7 @@ class FirestationServiceTest {
         assertEquals(sizeBefore - 2, firestationsMock.size());
         assertTrue(firestationsMock.stream().noneMatch(f -> f.getStation() == 3));
     }
+
     @Test
     void testDeleteFirestationMappingByAdress_NotFound() {
         when(dataLoader.getFirestations()).thenReturn(firestationsMock);

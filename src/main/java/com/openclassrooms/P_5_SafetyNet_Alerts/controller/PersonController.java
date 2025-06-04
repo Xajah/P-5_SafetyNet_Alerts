@@ -4,23 +4,19 @@ import com.openclassrooms.P_5_SafetyNet_Alerts.model.DTO.*;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.Person;
 import com.openclassrooms.P_5_SafetyNet_Alerts.service.PersonService;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-// ----- Ajout des imports pour log4j -----
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
- *   Contrôleur REST pour la gestion des personnes dans l’application SafetyNet.
- *  Gère les endpoints CRUD pour les personnes, ainsi que les GETs de l'API.
- *  */
+ * Contrôleur REST pour la gestion des personnes dans l’application SafetyNet.
+ * Gère les endpoints CRUD pour les personnes, ainsi que les GETs de l'API.
+ */
 @RestController
 @RequiredArgsConstructor
 public class PersonController {
@@ -37,7 +33,7 @@ public class PersonController {
      */
     // -------------------- /firestation?stationNumber=xx --------------------- //
     @GetMapping("/firestation")
-    public ResponseEntity<Optional<PersonsByFirestationIDReturn>> getPersonsByFirestationId(
+    public ResponseEntity<PersonsByFirestationIDReturn> getPersonsByFirestationId(
             @RequestParam("stationNumber") int stationNumber) {
         logger.info("GET /firestation - stationNumber={}", stationNumber);
         Optional<PersonsByFirestationIDReturn> result = personService.getAllPersonsByDependingOfFirestationID(stationNumber);
@@ -46,7 +42,7 @@ public class PersonController {
             return ResponseEntity.status(404).build();
         }
         logger.info("GET /firestation - OK for stationNumber={}", stationNumber);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result.get());
     }
 
     /**
@@ -77,15 +73,15 @@ public class PersonController {
      */
     // -------------------- /phoneAlert?firestation=xx --------------------- //
     @GetMapping("/phoneAlert")
-    public ResponseEntity<Optional<PhoneAlertByFirestationDTO>> getPhonesByFirestationID(@RequestParam int firestation){
+    public ResponseEntity<PhoneAlertByFirestationDTO> getPhonesByFirestationID(@RequestParam int firestation) {
         logger.info("GET /phoneAlert - firestation={}", firestation);
         Optional<PhoneAlertByFirestationDTO> result = personService.getPhoneAlertByFirestation(firestation);
-        if(result.isEmpty()){
+        if (result.isEmpty()) {
             logger.error("GET /phoneAlert - NOT FOUND for firestation={}", firestation);
-            return ResponseEntity.status(404).body(result);
+            return ResponseEntity.status(404).build();
         }
         logger.info("GET /phoneAlert - OK for firestation={}", firestation);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result.get());
     }
 
     /**
@@ -96,14 +92,15 @@ public class PersonController {
      */
     // -------------------- /fire?address=xxx --------------------- //
     @GetMapping("/fire")
-    public ResponseEntity<Optional<FireAddressReturnDTO>> getStationAndPeopleForAFire(@RequestParam String address){
+    public ResponseEntity<FireAddressReturnDTO> getStationAndPeopleForAFire(@RequestParam String address) {
         logger.info("GET /fire - address={}", address);
         Optional<FireAddressReturnDTO> result = personService.getHouseholdInfoByAddress(address);
-        if (result.isEmpty()){
+        if (result.isEmpty()) {
             logger.error("GET /fire - NOT FOUND for address={}", address);
-            return ResponseEntity.status(404).build();}
+            return ResponseEntity.status(404).build();
+        }
         logger.info("GET /fire - OK for address={}", address);
-        return ResponseEntity.ok(result);
+        return ResponseEntity.ok(result.get());
     }
 
     /**
@@ -163,9 +160,10 @@ public class PersonController {
         logger.info("GET /communityEmail - OK for city={}", city);
         return ResponseEntity.ok(emails);
 
-        //-----------EndPoint----------//
+
     }
 
+    //-----------EndPoint----------//
     /**
      * Ajoute une personne à la base de données si elle n'existe pas déjà (même prenom et nom).
      *
@@ -173,12 +171,12 @@ public class PersonController {
      * @return La personne en cas de succès (201) ou 409 si introuvable
      */
     @PostMapping("/person")
-    public  ResponseEntity<Optional<Person>> addPerson(@RequestBody Person person){
+    public ResponseEntity<Person> addPerson(@RequestBody Person person) {
         logger.info("POST /person - Request: {}", person);
         Optional<Person> result = personService.addPerson(person);
-        if(result.isPresent()){
+        if (result.isPresent()) {
             logger.info("POST /person - CREATED: {}", person);
-            return ResponseEntity.status(201).body(result);
+            return ResponseEntity.status(201).body(result.get());
         }
         logger.error("POST /person - CONFLICT: {}", person);
         return ResponseEntity.status(409).build();
@@ -191,12 +189,12 @@ public class PersonController {
      * @return Personne modifiée (200) ou erreur si non trouvée (410)
      */
     @PutMapping("/person")
-    public ResponseEntity<Optional<Person>> updatePerson(@RequestBody Person person){
+    public ResponseEntity<Person> updatePerson(@RequestBody Person person) {
         logger.info("PUT /person - Request: {}", person);
         Optional<Person> result = personService.updatePerson(person);
-        if (result.isPresent()){
+        if (result.isPresent()) {
             logger.info("PUT /person - UPDATED: {}", person);
-            return ResponseEntity.status(200).body(result);
+            return ResponseEntity.status(200).body(result.get());
         }
         logger.error("PUT /person - NOT FOUND: {}", person);
         return ResponseEntity.status(410).build();
@@ -207,14 +205,14 @@ public class PersonController {
      * Supprime une personne par son prénom et son nom.
      *
      * @param firstName Prénom de la personne à supprimer
-     * @param lastName Nom de la personne à supprimer
+     * @param lastName  Nom de la personne à supprimer
      * @return 200 si suppression réalisée, 410 si personne non trouvée
      */
     @DeleteMapping("/person")
-    public  ResponseEntity<Void> deletePerson (@RequestParam String firstName,@RequestParam String lastName){
+    public ResponseEntity<Void> deletePerson(@RequestParam String firstName, @RequestParam String lastName) {
         logger.info("DELETE /person - firstName={}, lastName={}", firstName, lastName);
         boolean delete = personService.deletePerson(firstName, lastName);
-        if(delete){
+        if (delete) {
             logger.info("DELETE /person - DELETED: firstName={}, lastName={}", firstName, lastName);
             return ResponseEntity.status(200).build();
         }

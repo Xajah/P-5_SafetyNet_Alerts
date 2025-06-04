@@ -3,19 +3,17 @@ package com.openclassrooms.P_5_SafetyNet_Alerts.controller;
 import com.openclassrooms.P_5_SafetyNet_Alerts.model.MedicalRecord;
 import com.openclassrooms.P_5_SafetyNet_Alerts.service.MedicalRecordService;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
-// Ajout import logger
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 /**
- *   Contrôleur REST pour la gestion des informations medicales dans l’application SafetyNet.
- *  Gère les endpoints CRUD pour les informations medicales.
- *  */
+ * Contrôleur REST pour la gestion des informations medicales dans l’application SafetyNet.
+ * Gère les endpoints CRUD pour les informations medicales.
+ */
 
 @RestController
 @RequiredArgsConstructor
@@ -32,12 +30,12 @@ public class MedicalRecordController {
      * @return Le dossier ajouté (201), ou 409 si conflit (déjà existant, clef prenom + nom)
      */
     @PostMapping("/medicalRecord")
-    public ResponseEntity<Optional<MedicalRecord>> addMedicalRecord(@RequestBody MedicalRecord medicalRecord){
+    public ResponseEntity<MedicalRecord> addMedicalRecord(@RequestBody MedicalRecord medicalRecord) {
         logger.info("POST /medicalRecord - Request: {}", medicalRecord);
         Optional<MedicalRecord> result = medicalRecordService.addMedicalRecord(medicalRecord);
-        if (result.isPresent()){
+        if (result.isPresent()) {
             logger.info("POST /medicalRecord - CREATED: {}", result.get());
-            return ResponseEntity.status(201).body(result);
+            return ResponseEntity.status(201).body(result.get());
         }
         logger.error("POST /medicalRecord - CONFLICT: {}", medicalRecord);
         return ResponseEntity.status(409).build();
@@ -50,15 +48,15 @@ public class MedicalRecordController {
      * @return Le dossier modifié (200), ou 410 si non trouvé (clef prenom + nom)
      */
     @PutMapping("/medicalRecord")
-    public ResponseEntity<Optional<MedicalRecord>> updateMedicalRecord(@RequestBody MedicalRecord medicalRecord){
+    public ResponseEntity<MedicalRecord> updateMedicalRecord(@RequestBody MedicalRecord medicalRecord) {
         logger.info("PUT /medicalRecord - Request: {}", medicalRecord);
         Optional<MedicalRecord> result = medicalRecordService.updateMedicalRecord(medicalRecord);
-        if (result.isPresent()){
+        if (result.isPresent()) {
             logger.info("PUT /medicalRecord - UPDATED: {}", result.get());
-            return ResponseEntity.status(200).body(result);
+            return ResponseEntity.status(200).body(result.get());
         }
         logger.error("PUT /medicalRecord - NOT FOUND: {}", medicalRecord);
-        return  ResponseEntity.status(410).build();
+        return ResponseEntity.status(410).build();
     }
 
     /**
@@ -69,10 +67,10 @@ public class MedicalRecordController {
      * @return 200 si supprimé, 410 si non trouvé
      */
     @DeleteMapping("/medicalRecord")
-    public ResponseEntity<Void> deleteMedicalRecord (@RequestParam String firstName, @RequestParam String lastName){
+    public ResponseEntity<Void> deleteMedicalRecord(@RequestParam String firstName, @RequestParam String lastName) {
         logger.info("DELETE /medicalRecord - firstName={}, lastName={}", firstName, lastName);
         Boolean delete = medicalRecordService.deleteMedicalRecord(firstName, lastName);
-        if (delete){
+        if (delete) {
             logger.info("DELETE /medicalRecord - DELETED: firstName={}, lastName={}", firstName, lastName);
             return ResponseEntity.status(200).build();
         }
